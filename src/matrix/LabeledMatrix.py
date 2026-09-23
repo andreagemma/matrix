@@ -16,10 +16,26 @@ class _AxisIndexer:
     """Internal helper implementing ``.loc`` and ``.iloc`` style indexing."""
 
     def __init__(self, parent: LabeledMatrix, use_labels: bool) -> None:
+        """Implement `__init__`.
+        
+        Args:
+            parent: TODO describe parent.
+            use_labels: TODO describe use_labels.
+        
+        """
         self._parent = parent
         self._use_labels = use_labels
 
     def __getitem__(self, key: IndexLike | tuple[IndexLike, IndexLike]) -> Any:
+        """Implement `__getitem__`.
+        
+        Args:
+            key: TODO describe key.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if not isinstance(key, tuple):
             raise TypeError("2D indexing expected: use [rows, cols]")
         row_key, col_key = key
@@ -50,6 +66,16 @@ class _AxisIndexer:
         return output
 
     def __setitem__(self, key: IndexLike | tuple[IndexLike, IndexLike], value: Any) -> None:
+        """Implement `__setitem__`.
+        
+        Args:
+            key: TODO describe key.
+            value: TODO describe value.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if not isinstance(key, tuple):
             raise TypeError("2D indexing expected: use [rows, cols]")
         row_key, col_key = key
@@ -89,6 +115,16 @@ class LabeledMatrix:
         dtype: np.dtype | None = None,
         copy: bool = False,
     ) -> None:
+        """Implement `__init__`.
+        
+        Args:
+            data: TODO describe data.
+            row_index: TODO describe row_index.
+            col_index: TODO describe col_index.
+            dtype: TODO describe dtype.
+            copy: TODO describe copy.
+        
+        """
         array = np.asarray(data, dtype=dtype)
         array = array.copy(order="C") if copy else np.ascontiguousarray(array)
         if array.ndim != 2:
@@ -135,6 +171,12 @@ class LabeledMatrix:
         return self._col_index
 
     def __repr__(self) -> str:
+        """Implement `__repr__`.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         rows, cols = self.shape
         return (
             f"LabeledMatrix(shape={rows}x{cols}, dtype={self.dtype}, "
@@ -143,6 +185,8 @@ class LabeledMatrix:
         )
 
     def _resolve_axis_key(self, key: IndexLike, *, axis: int, by_label: bool) -> Any:
+        # Internal helper: resolve axis key.
+        """Internal helper: resolve axis key."""
         axis_size = self.shape[axis]
         if key is None:
             return np.arange(axis_size)
@@ -166,6 +210,8 @@ class LabeledMatrix:
 
     @staticmethod
     def _ensure_label(value: Any) -> Label:
+        # Internal helper: ensure label.
+        """Internal helper: ensure label."""
         try:
             hash(value)
         except Exception as exc:  # pragma: no cover
@@ -173,6 +219,15 @@ class LabeledMatrix:
         return value
 
     def __getitem__(self, key: tuple[Any, Any]) -> Any:
+        """Implement `__getitem__`.
+        
+        Args:
+            key: TODO describe key.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if not isinstance(key, tuple) or len(key) != 2:
             raise TypeError("Use M[row_label, col_label] or M[i, j]")
         row_key, col_key = key
@@ -183,6 +238,16 @@ class LabeledMatrix:
         return self._values[row_index, col_index]
 
     def __setitem__(self, key: tuple[Any, Any], value: Any) -> None:
+        """Implement `__setitem__`.
+        
+        Args:
+            key: TODO describe key.
+            value: TODO describe value.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if not isinstance(key, tuple) or len(key) != 2:
             raise TypeError("Use M[row_label, col_label] or M[i, j]")
         row_key, col_key = key
@@ -278,6 +343,8 @@ class LabeledMatrix:
         )
 
     def _binary_op(self, other: Any, op: Any) -> LabeledMatrix:
+        # Internal helper: binary op.
+        """Internal helper: binary op."""
         if isinstance(other, LabeledMatrix):
             if self.row_index != other.row_index or self.col_index != other.col_index:
                 raise ValueError(

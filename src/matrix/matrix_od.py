@@ -13,7 +13,15 @@ import pandas as pd
 Label: TypeAlias = Hashable
 LabelMap: TypeAlias = Mapping[Label, int]
 LabelsInput: TypeAlias = Sequence[Label] | np.ndarray | LabelMap
-MatrixInit: TypeAlias = Mapping[Label, Mapping[Label, float]] | Sequence[Sequence[float]] | int | float | np.ndarray | "MatrixOD" | None  # noqa: E501
+MatrixInit: TypeAlias = (
+    Mapping[Label, Mapping[Label, float]]
+    | Sequence[Sequence[float]]
+    | int
+    | float
+    | np.ndarray
+    | "MatrixOD"
+    | None
+)  # noqa: E501
 
 
 def convert_to_dict(labels: LabelsInput) -> LabelMap:
@@ -21,7 +29,7 @@ def convert_to_dict(labels: LabelsInput) -> LabelMap:
     if isinstance(labels, Mapping):
         converted_mapping: dict[Label, int] = dict(labels)
         positions = list(converted_mapping.values())
-        if not all(isinstance(position, int) for position in positions): # type: ignore
+        if not all(isinstance(position, int) for position in positions):  # type: ignore
             raise ValueError("Label mapping values must be integer positions.")
         if sorted(positions) != list(range(len(converted_mapping))):
             raise ValueError("Label mapping positions must be unique and zero-based.")
@@ -67,6 +75,16 @@ class MatrixOD:
         copy: bool = False,
         mode: str | None = None,
     ) -> None:
+        """Implement `__init__`.
+        
+        Args:
+            rows: TODO describe rows.
+            cols: TODO describe cols.
+            init: TODO describe init.
+            copy: TODO describe copy.
+            mode: TODO describe mode.
+        
+        """
         self.rows = convert_to_dict(rows)
         self.cols = convert_to_dict(cols)
         self.mode = mode
@@ -78,6 +96,8 @@ class MatrixOD:
         *,
         copy: bool,
     ) -> np.ndarray:
+        # Internal helper: init array.
+        """Internal helper: init array."""
         shape = (len(self.rows), len(self.cols))
         if init is None:
             return np.zeros(shape, dtype=float)
@@ -105,18 +125,24 @@ class MatrixOD:
         return array
 
     def _row_position(self, label: Label) -> int:
+        # Internal helper: row position.
+        """Internal helper: row position."""
         try:
             return self.rows[label]
         except KeyError as exc:
             raise KeyError(f"Row label {label!r} not found.") from exc
 
     def _col_position(self, label: Label) -> int:
+        # Internal helper: col position.
+        """Internal helper: col position."""
         try:
             return self.cols[label]
         except KeyError as exc:
             raise KeyError(f"Column label {label!r} not found.") from exc
 
     def _ensure_same_labels(self, other: MatrixOD) -> None:
+        # Internal helper: ensure same labels.
+        """Internal helper: ensure same labels."""
         if self.rows != other.rows or self.cols != other.cols:
             raise ValueError("Matrices must have the same row and column labels.")
 
@@ -131,17 +157,48 @@ class MatrixOD:
         )
 
     def __getitem__(self, pos: tuple[Label, Label]) -> float:
+        """Implement `__getitem__`.
+        
+        Args:
+            pos: TODO describe pos.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         row_label, col_label = pos
         return self.mat[self._row_position(row_label), self._col_position(col_label)]
 
     def __setitem__(self, pos: tuple[Label, Label], value: float) -> None:
+        """Implement `__setitem__`.
+        
+        Args:
+            pos: TODO describe pos.
+            value: TODO describe value.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         row_label, col_label = pos
         self.mat[self._row_position(row_label), self._col_position(col_label)] = value
 
     def __repr__(self) -> str:
+        """Implement `__repr__`.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         return repr(self.mat)
 
     def __str__(self) -> str:
+        """Implement `__str__`.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         row_labels = list(self.rows.keys())
         col_labels = list(self.cols.keys())
 
@@ -163,9 +220,24 @@ class MatrixOD:
         return header + rows_str
 
     def __neg__(self) -> MatrixOD:
+        """Implement `__neg__`.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         return MatrixOD(self.rows, self.cols, init=-self.mat, mode=self.mode)
 
     def __add__(self, other: int | float | MatrixOD) -> MatrixOD:
+        """Implement `__add__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             return MatrixOD(self.rows, self.cols, init=self.mat + other.mat, mode=self.mode)
@@ -176,6 +248,15 @@ class MatrixOD:
     __radd__ = __add__
 
     def __sub__(self, other: int | float | MatrixOD) -> MatrixOD:
+        """Implement `__sub__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             return MatrixOD(self.rows, self.cols, init=self.mat - other.mat, mode=self.mode)
@@ -184,11 +265,29 @@ class MatrixOD:
         raise TypeError("Unsupported operand type for subtraction.")
 
     def __rsub__(self, other: int | float) -> MatrixOD:
+        """Implement `__rsub__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, (int, float)):
             return MatrixOD(self.rows, self.cols, init=other - self.mat, mode=self.mode)
         raise TypeError("Unsupported operand type for subtraction.")
 
     def __iadd__(self, other: int | float | MatrixOD) -> MatrixOD:
+        """Implement `__iadd__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             self.mat += other.mat
@@ -199,6 +298,15 @@ class MatrixOD:
         return self
 
     def __isub__(self, other: int | float | MatrixOD) -> MatrixOD:
+        """Implement `__isub__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             self.mat -= other.mat
@@ -209,6 +317,15 @@ class MatrixOD:
         return self
 
     def __mul__(self, other: int | float | MatrixOD) -> MatrixOD:
+        """Implement `__mul__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             return MatrixOD(self.rows, self.cols, init=self.mat * other.mat, mode=self.mode)
@@ -219,6 +336,15 @@ class MatrixOD:
     __rmul__ = __mul__
 
     def __imul__(self, other: int | float | MatrixOD) -> MatrixOD:
+        """Implement `__imul__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             self.mat *= other.mat
@@ -229,6 +355,15 @@ class MatrixOD:
         return self
 
     def __truediv__(self, other: int | float | MatrixOD) -> MatrixOD:
+        """Implement `__truediv__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             return MatrixOD(self.rows, self.cols, init=self.mat / other.mat, mode=self.mode)
@@ -237,11 +372,29 @@ class MatrixOD:
         raise TypeError("Unsupported operand type for division.")
 
     def __rtruediv__(self, other: int | float) -> MatrixOD:
+        """Implement `__rtruediv__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, (int, float)):
             return MatrixOD(self.rows, self.cols, init=other / self.mat, mode=self.mode)
         raise TypeError("Unsupported operand type for division.")
 
     def __itruediv__(self, other: int | float | MatrixOD) -> MatrixOD:
+        """Implement `__itruediv__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             self.mat /= other.mat

@@ -30,6 +30,17 @@ class MatrixODT:
         copy: bool = False,
         mode: str | None = None,
     ) -> None:
+        """Implement `__init__`.
+        
+        Args:
+            rows: TODO describe rows.
+            cols: TODO describe cols.
+            timestamps: TODO describe timestamps.
+            init: TODO describe init.
+            copy: TODO describe copy.
+            mode: TODO describe mode.
+        
+        """
         self.rows: LabelMap
         self.cols: LabelMap
         self.timestamps: set[Timestamp]
@@ -53,10 +64,7 @@ class MatrixODT:
                 raise ValueError("Timestamps must be provided when initializing with a MatrixOD.")
             self.timestamps = set(timestamps)
             self.mode = init.mode if mode is None else mode
-            self.ods = {
-                timestamp: self._coerce_matrix(init, copy=True)
-                for timestamp in timestamps
-            }
+            self.ods = {timestamp: self._coerce_matrix(init, copy=True) for timestamp in timestamps}
             return
         self.rows = convert_to_dict(rows)
         self.cols = convert_to_dict(cols)
@@ -72,7 +80,10 @@ class MatrixODT:
             if isinstance(init, (int, float)):
                 init = {timestamp: init for timestamp in self.timestamps}
             elif not isinstance(init, dict):
-                raise TypeError("Initialization value must be a number or a dictionary mapping timestamps to values.")
+                raise TypeError(
+                    "Initialization value must be a number or a dictionary "
+                    "mapping timestamps to values."
+                )
             for timestamp, value in init.items():
                 self.timestamps.add(timestamp)
                 self.ods[timestamp] = self._coerce_matrix(value, copy=copy)
@@ -83,6 +94,8 @@ class MatrixODT:
         *,
         copy: bool,
     ) -> MatrixOD:
+        # Internal helper: coerce matrix.
+        """Internal helper: coerce matrix."""
         if isinstance(value, MatrixOD):
             if value.rows != self.rows or value.cols != self.cols:
                 raise ValueError("Matrices must have the same row and column labels.")
@@ -90,12 +103,18 @@ class MatrixODT:
         return MatrixOD(self.rows, self.cols, init=value, copy=copy, mode=self.mode)
 
     def _zero_matrix(self) -> MatrixOD:
+        # Internal helper: zero matrix.
+        """Internal helper: zero matrix."""
         return MatrixOD(self.rows, self.cols, mode=self.mode)
 
     def _matrix_or_zero(self, timestamp: Timestamp) -> MatrixOD:
+        # Internal helper: matrix or zero.
+        """Internal helper: matrix or zero."""
         return self.ods.get(timestamp, self._zero_matrix())
 
     def _ensure_same_axes(self, other: MatrixODT) -> None:
+        # Internal helper: ensure same axes.
+        """Internal helper: ensure same axes."""
         if self.rows != other.rows or self.cols != other.cols:
             raise ValueError("Matrices must have the same row and column labels.")
 
@@ -114,6 +133,15 @@ class MatrixODT:
         self,
         pos: Timestamp | tuple[Hashable, Hashable, Timestamp],
     ) -> MatrixOD | float:
+        """Implement `__getitem__`.
+        
+        Args:
+            pos: TODO describe pos.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if not isinstance(pos, tuple):
             return self._matrix_or_zero(pos)
         if len(pos) != 3:
@@ -128,6 +156,16 @@ class MatrixODT:
         pos: Timestamp | tuple[Hashable, Hashable, Timestamp],
         value: MatrixOD | MatrixInit | int | float,
     ) -> None:
+        """Implement `__setitem__`.
+        
+        Args:
+            pos: TODO describe pos.
+            value: TODO describe value.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if not isinstance(pos, tuple):
             self.timestamps.add(pos)
             self.ods[pos] = self._coerce_matrix(value, copy=False)
@@ -168,11 +206,29 @@ class MatrixODT:
         raise ValueError("Axis must be 0, 1, 2, or None.")
 
     def __add__(self, other: int | float | MatrixODT) -> MatrixODT:
+        """Implement `__add__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         result = self.copy()
         result += other
         return result
 
     def __iadd__(self, other: int | float | MatrixODT) -> MatrixODT:
+        """Implement `__iadd__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, MatrixODT):
             self._ensure_same_axes(other)
             timestamps = self.timestamps | other.timestamps
@@ -189,11 +245,29 @@ class MatrixODT:
         return self
 
     def __sub__(self, other: int | float | MatrixODT) -> MatrixODT:
+        """Implement `__sub__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         result = self.copy()
         result -= other
         return result
 
     def __isub__(self, other: int | float | MatrixODT) -> MatrixODT:
+        """Implement `__isub__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, MatrixODT):
             self._ensure_same_axes(other)
             timestamps = self.timestamps | other.timestamps
@@ -210,11 +284,29 @@ class MatrixODT:
         return self
 
     def __mul__(self, other: int | float | MatrixODT) -> MatrixODT:
+        """Implement `__mul__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         result = self.copy()
         result *= other
         return result
 
     def __imul__(self, other: int | float | MatrixODT) -> MatrixODT:
+        """Implement `__imul__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, MatrixODT):
             self._ensure_same_axes(other)
             timestamps = self.timestamps | other.timestamps
@@ -231,11 +323,29 @@ class MatrixODT:
         return self
 
     def __truediv__(self, other: int | float | MatrixODT) -> MatrixODT:
+        """Implement `__truediv__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         result = self.copy()
         result /= other
         return result
 
     def __itruediv__(self, other: int | float | MatrixODT) -> MatrixODT:
+        """Implement `__itruediv__`.
+        
+        Args:
+            other: TODO describe other.
+        
+        Returns:
+            TODO describe return value.
+        
+        """
         if isinstance(other, MatrixODT):
             self._ensure_same_axes(other)
             timestamps = self.timestamps | other.timestamps
