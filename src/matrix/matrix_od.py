@@ -25,7 +25,14 @@ MatrixInit: TypeAlias = (
 
 
 def convert_to_dict(labels: LabelsInput) -> LabelMap:
-    """Convert labels or an existing label-position mapping to an immutable mapping."""
+    """Convert labels to an immutable label-position mapping.
+
+    Args:
+        labels: Sequence, NumPy array, or existing label-position mapping.
+
+    Returns:
+        An immutable mapping from each label to its zero-based position.
+    """
     if isinstance(labels, Mapping):
         converted_mapping: dict[Label, int] = dict(labels)
         positions = list(converted_mapping.values())
@@ -52,19 +59,13 @@ def convert_to_dict(labels: LabelsInput) -> LabelMap:
 class MatrixOD:
     """A NumPy-backed matrix addressed by origin and destination labels.
 
-    Parameters
-    ----------
-    rows:
-        Row labels or a label-to-position mapping.
-    cols:
-        Column labels or a label-to-position mapping.
-    init:
-        Optional initial data. Accepts nested dictionaries, rectangular sequences,
-        scalar values, NumPy arrays, or another ``MatrixOD``.
-    copy:
-        Whether to copy NumPy or ``MatrixOD`` data instead of sharing it.
-    mode:
-        Optional user metadata preserved on copies and arithmetic results.
+    Args:
+        rows: Row labels or a label-to-position mapping.
+        cols: Column labels or a label-to-position mapping.
+        init: Optional nested dictionaries, rectangular sequence, scalar value,
+            NumPy array, or another ``MatrixOD``.
+        copy: Whether to copy NumPy or ``MatrixOD`` data instead of sharing it.
+        mode: Optional metadata preserved on copies and arithmetic results.
     """
 
     def __init__(
@@ -75,15 +76,14 @@ class MatrixOD:
         copy: bool = False,
         mode: str | None = None,
     ) -> None:
-        """Implement `__init__`.
-        
+        """Create an origin-destination matrix with labeled axes.
+
         Args:
-            rows: TODO describe rows.
-            cols: TODO describe cols.
-            init: TODO describe init.
-            copy: TODO describe copy.
-            mode: TODO describe mode.
-        
+            rows: Row labels or a label-to-position mapping.
+            cols: Column labels or a label-to-position mapping.
+            init: Optional initial matrix data.
+            copy: Whether to copy array-backed initial data.
+            mode: Optional metadata associated with the matrix.
         """
         self.rows = convert_to_dict(rows)
         self.cols = convert_to_dict(cols)
@@ -96,7 +96,6 @@ class MatrixOD:
         *,
         copy: bool,
     ) -> np.ndarray:
-        # Internal helper: init array.
         """Internal helper: init array."""
         shape = (len(self.rows), len(self.cols))
         if init is None:
@@ -114,7 +113,7 @@ class MatrixOD:
             array = init.copy() if copy else init
         elif isinstance(init, (int, float)):
             array = np.full(shape, init, dtype=float)
-        elif isinstance(init, Sequence) and not isinstance(init, (str, bytes)):
+        elif isinstance(init, Sequence) and not isinstance(init, (str, bytes)):  # pyright: ignore[reportUnnecessaryIsInstance]
             array = np.asarray(init, dtype=float)
         else:
             raise TypeError("Unsupported type for init.")
@@ -125,7 +124,6 @@ class MatrixOD:
         return array
 
     def _row_position(self, label: Label) -> int:
-        # Internal helper: row position.
         """Internal helper: row position."""
         try:
             return self.rows[label]
@@ -133,7 +131,6 @@ class MatrixOD:
             raise KeyError(f"Row label {label!r} not found.") from exc
 
     def _col_position(self, label: Label) -> int:
-        # Internal helper: col position.
         """Internal helper: col position."""
         try:
             return self.cols[label]
@@ -141,13 +138,19 @@ class MatrixOD:
             raise KeyError(f"Column label {label!r} not found.") from exc
 
     def _ensure_same_labels(self, other: MatrixOD) -> None:
-        # Internal helper: ensure same labels.
         """Internal helper: ensure same labels."""
         if self.rows != other.rows or self.cols != other.cols:
             raise ValueError("Matrices must have the same row and column labels.")
 
     def copy(self, copy_data: bool = True) -> MatrixOD:
-        """Return a copy of this matrix, optionally sharing the underlying array."""
+        """Return a copy of this matrix.
+
+        Args:
+            copy_data: Whether to copy the underlying array or share it.
+
+        Returns:
+            A matrix with the same labels, values, and metadata.
+        """
         return MatrixOD(
             self.rows,
             self.cols,
@@ -157,48 +160,33 @@ class MatrixOD:
         )
 
     def __getitem__(self, pos: tuple[Label, Label]) -> float:
-        """Implement `__getitem__`.
-        
+        """Return the value at an origin and destination pair.
+
         Args:
-            pos: TODO describe pos.
-        
+            pos: Origin and destination label pair.
+
         Returns:
-            TODO describe return value.
-        
+            The value at ``pos``.
         """
         row_label, col_label = pos
         return self.mat[self._row_position(row_label), self._col_position(col_label)]
 
     def __setitem__(self, pos: tuple[Label, Label], value: float) -> None:
-        """Implement `__setitem__`.
-        
+        """Set the value at an origin and destination pair.
+
         Args:
-            pos: TODO describe pos.
-            value: TODO describe value.
-        
-        Returns:
-            TODO describe return value.
-        
+            pos: Origin and destination label pair.
+            value: Value assigned to ``pos``.
         """
         row_label, col_label = pos
         self.mat[self._row_position(row_label), self._col_position(col_label)] = value
 
     def __repr__(self) -> str:
-        """Implement `__repr__`.
-        
-        Returns:
-            TODO describe return value.
-        
-        """
+        """Return the NumPy representation of the matrix."""
         return repr(self.mat)
 
     def __str__(self) -> str:
-        """Implement `__str__`.
-        
-        Returns:
-            TODO describe return value.
-        
-        """
+        """Return a compact labeled representation of the matrix."""
         row_labels = list(self.rows.keys())
         col_labels = list(self.cols.keys())
 
@@ -220,185 +208,170 @@ class MatrixOD:
         return header + rows_str
 
     def __neg__(self) -> MatrixOD:
-        """Implement `__neg__`.
-        
-        Returns:
-            TODO describe return value.
-        
-        """
+        """Return a matrix with all values negated."""
         return MatrixOD(self.rows, self.cols, init=-self.mat, mode=self.mode)
 
     def __add__(self, other: int | float | MatrixOD) -> MatrixOD:
-        """Implement `__add__`.
-        
+        """Add a scalar or an aligned matrix.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or matrix to add.
+
         Returns:
-            TODO describe return value.
-        
+            A new matrix containing the sum.
         """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             return MatrixOD(self.rows, self.cols, init=self.mat + other.mat, mode=self.mode)
-        if isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             return MatrixOD(self.rows, self.cols, init=self.mat + other, mode=self.mode)
         raise TypeError("Unsupported operand type for addition.")
 
     __radd__ = __add__
 
     def __sub__(self, other: int | float | MatrixOD) -> MatrixOD:
-        """Implement `__sub__`.
-        
+        """Subtract a scalar or an aligned matrix.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or matrix to subtract.
+
         Returns:
-            TODO describe return value.
-        
+            A new matrix containing the difference.
         """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             return MatrixOD(self.rows, self.cols, init=self.mat - other.mat, mode=self.mode)
-        if isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             return MatrixOD(self.rows, self.cols, init=self.mat - other, mode=self.mode)
         raise TypeError("Unsupported operand type for subtraction.")
 
     def __rsub__(self, other: int | float) -> MatrixOD:
-        """Implement `__rsub__`.
-        
+        """Subtract this matrix from a scalar.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar from which to subtract the matrix.
+
         Returns:
-            TODO describe return value.
-        
+            A new matrix containing the difference.
         """
-        if isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             return MatrixOD(self.rows, self.cols, init=other - self.mat, mode=self.mode)
         raise TypeError("Unsupported operand type for subtraction.")
 
     def __iadd__(self, other: int | float | MatrixOD) -> MatrixOD:
-        """Implement `__iadd__`.
-        
+        """Add a scalar or aligned matrix in place.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or matrix to add.
+
         Returns:
-            TODO describe return value.
-        
+            This matrix after the update.
         """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             self.mat += other.mat
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             self.mat += other
         else:
             raise TypeError("Unsupported operand type for addition.")
         return self
 
     def __isub__(self, other: int | float | MatrixOD) -> MatrixOD:
-        """Implement `__isub__`.
-        
+        """Subtract a scalar or aligned matrix in place.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or matrix to subtract.
+
         Returns:
-            TODO describe return value.
-        
+            This matrix after the update.
         """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             self.mat -= other.mat
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             self.mat -= other
         else:
             raise TypeError("Unsupported operand type for subtraction.")
         return self
 
     def __mul__(self, other: int | float | MatrixOD) -> MatrixOD:
-        """Implement `__mul__`.
-        
+        """Multiply by a scalar or aligned matrix element-wise.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or matrix multiplier.
+
         Returns:
-            TODO describe return value.
-        
+            A new matrix containing the product.
         """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             return MatrixOD(self.rows, self.cols, init=self.mat * other.mat, mode=self.mode)
-        if isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             return MatrixOD(self.rows, self.cols, init=self.mat * other, mode=self.mode)
         raise TypeError("Unsupported operand type for multiplication.")
 
     __rmul__ = __mul__
 
     def __imul__(self, other: int | float | MatrixOD) -> MatrixOD:
-        """Implement `__imul__`.
-        
+        """Multiply by a scalar or aligned matrix in place.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or matrix multiplier.
+
         Returns:
-            TODO describe return value.
-        
+            This matrix after the update.
         """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             self.mat *= other.mat
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             self.mat *= other
         else:
             raise TypeError("Unsupported operand type for multiplication.")
         return self
 
     def __truediv__(self, other: int | float | MatrixOD) -> MatrixOD:
-        """Implement `__truediv__`.
-        
+        """Divide by a scalar or aligned matrix element-wise.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or matrix divisor.
+
         Returns:
-            TODO describe return value.
-        
+            A new matrix containing the quotient.
         """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             return MatrixOD(self.rows, self.cols, init=self.mat / other.mat, mode=self.mode)
-        if isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             return MatrixOD(self.rows, self.cols, init=self.mat / other, mode=self.mode)
         raise TypeError("Unsupported operand type for division.")
 
     def __rtruediv__(self, other: int | float) -> MatrixOD:
-        """Implement `__rtruediv__`.
-        
+        """Divide a scalar by this matrix element-wise.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar numerator.
+
         Returns:
-            TODO describe return value.
-        
+            A new matrix containing the quotient.
         """
-        if isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             return MatrixOD(self.rows, self.cols, init=other / self.mat, mode=self.mode)
         raise TypeError("Unsupported operand type for division.")
 
     def __itruediv__(self, other: int | float | MatrixOD) -> MatrixOD:
-        """Implement `__itruediv__`.
-        
+        """Divide by a scalar or aligned matrix in place.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or matrix divisor.
+
         Returns:
-            TODO describe return value.
-        
+            This matrix after the update.
         """
         if isinstance(other, MatrixOD):
             self._ensure_same_labels(other)
             self.mat /= other.mat
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             self.mat /= other
         else:
             raise TypeError("Unsupported operand type for division.")
@@ -419,7 +392,11 @@ class MatrixOD:
         return np.diag(self.mat)
 
     def set_diagonal(self, values: Sequence[float]) -> None:
-        """Replace the main diagonal values."""
+        """Replace the main diagonal values.
+
+        Args:
+            values: Values assigned to the main diagonal.
+        """
         if len(values) != min(self.mat.shape):
             raise ValueError("Length of values must match the length of the matrix diagonal.")
         np.fill_diagonal(self.mat, values)
@@ -431,7 +408,14 @@ class MatrixOD:
         posinf: float | None = None,
         neginf: float | None = None,
     ) -> None:
-        """Replace NaN and infinite values in the matrix."""
+        """Replace NaN and infinite values in the matrix.
+
+        Args:
+            copy: Whether to return a new array instead of updating in place.
+            nan: Replacement value for NaN entries.
+            posinf: Replacement value for positive infinity entries.
+            neginf: Replacement value for negative infinity entries.
+        """
         self.mat = np.nan_to_num(self.mat, copy=copy, nan=nan, posinf=posinf, neginf=neginf)
 
     def sum(self, axis: int | None = None) -> float | MatrixOD:
@@ -439,6 +423,12 @@ class MatrixOD:
 
         ``axis=None`` returns a scalar. ``axis=0`` returns one ``sum`` row with
         column totals. ``axis=1`` returns one ``sum`` column with row totals.
+
+        Args:
+            axis: Axis to collapse, or ``None`` to sum all values.
+
+        Returns:
+            A scalar total or a labeled matrix of axis totals.
         """
         if axis is None:
             return float(np.sum(self.mat))
@@ -459,7 +449,19 @@ class MatrixOD:
         d_field: str = "d",
         value_field: str = "value",
     ) -> MatrixOD:
-        """Create a matrix from a long-form DataFrame."""
+        """Create a matrix from a long-form DataFrame.
+
+        Args:
+            rows: Row labels or a label-to-position mapping.
+            cols: Column labels or a label-to-position mapping.
+            df: DataFrame containing origin, destination, and value columns.
+            o_field: Name of the origin column.
+            d_field: Name of the destination column.
+            value_field: Name of the value column.
+
+        Returns:
+            A matrix populated from ``df``.
+        """
         matrix = MatrixOD(rows=rows, cols=cols)
         frame = df[[o_field, d_field, value_field]].rename(
             columns={o_field: "o", d_field: "d", value_field: "value"}
@@ -477,7 +479,19 @@ class MatrixOD:
         d_field: str = "d",
         value_field: str = "value",
     ) -> MatrixOD:
-        """Create a matrix from a long-form CSV file."""
+        """Create a matrix from a long-form CSV file.
+
+        Args:
+            rows: Row labels or a label-to-position mapping.
+            cols: Column labels or a label-to-position mapping.
+            file: CSV path or path-like object.
+            o_field: Name of the origin column.
+            d_field: Name of the destination column.
+            value_field: Name of the value column.
+
+        Returns:
+            A matrix populated from the CSV file.
+        """
         df = pd.read_csv(file, usecols=[o_field, d_field, value_field])
         return MatrixOD.read_df(
             rows=rows,
@@ -494,7 +508,16 @@ class MatrixOD:
         d_field: str = "d",
         value_field: str = "value",
     ) -> pd.DataFrame:
-        """Return the matrix as a long-form DataFrame."""
+        """Return the matrix as a long-form DataFrame.
+
+        Args:
+            o_field: Name of the origin column in the result.
+            d_field: Name of the destination column in the result.
+            value_field: Name of the value column in the result.
+
+        Returns:
+            A DataFrame with one row for each origin-destination pair.
+        """
         data: list[dict[str, Any]] = []
         for origin, origin_index in self.rows.items():
             for destination, destination_index in self.cols.items():
@@ -514,6 +537,13 @@ class MatrixOD:
         d_field: str = "d",
         value_field: str = "value",
     ) -> None:
-        """Write the matrix as a long-form CSV file."""
+        """Write the matrix as a long-form CSV file.
+
+        Args:
+            file: CSV path or path-like object.
+            o_field: Name of the origin column.
+            d_field: Name of the destination column.
+            value_field: Name of the value column.
+        """
         df = self.write_df(o_field=o_field, d_field=d_field, value_field=value_field)
         df.to_csv(file, index=False)

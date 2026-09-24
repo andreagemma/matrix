@@ -46,21 +46,3 @@ Main methods:
 Arithmetic with scalars or label-aligned `MatrixODT` instances is element-wise.
 When two `MatrixODT` objects contain different timestamps, missing timestamps are
 treated as zero matrices.
-
-## `LabeledMatrix`
-
-```python
-LabeledMatrix(data, row_index=..., col_index=..., dtype=None, copy=False)
-```
-
-Creates a generic labeled 2D NumPy array. Use direct indexing for scalar access,
-`.loc` for label-based indexing, and `.iloc` for position-based indexing.
-
-Main methods:
-
-- `from_dict_of_dicts(data, dtype=None, row_order=None, col_order=None, fill_value=0)`
-- `reindex(rows=None, cols=None, fill_value=0)`
-- `rename(rows=None, cols=None)`
-- `tolist()`
-- `to_numpy(copy=False)`
-- `to_pandas()`

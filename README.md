@@ -103,23 +103,6 @@ assert odt.sum(axis=2)["A", "X"] == 10
 timestamp, and value columns. If `timestamps` is omitted, timestamp labels are
 inferred from the DataFrame in first-seen order.
 
-## LabeledMatrix
-
-`LabeledMatrix` is a more generic 2D labeled array with `.loc` and `.iloc`
-indexers:
-
-```python
-from matrix import LabeledMatrix
-
-table = LabeledMatrix(
-    [[1, 2], [3, 4]],
-    row_index=["a", "b"],
-    col_index=["x", "y"],
-)
-
-assert table.loc["b", "y"] == 4
-```
-
 ## API Summary
 
 - `MatrixOD(rows, cols, init=None, copy=False, mode=None)`
@@ -132,8 +115,6 @@ assert table.loc["b", "y"] == 4
 - `MatrixODT.read_csv(rows, cols, file, timestamps=None, ...)`
 - `MatrixODT.write_df(...)`
 - `MatrixODT.write_csv(file, ...)`
-- `LabeledMatrix(data, row_index=..., col_index=..., dtype=None, copy=False)`
-
 ## Development
 
 GA Matrix supports Python 3.10 and newer.

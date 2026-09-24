@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable, Mapping
 from os import PathLike
-from typing import Any, TypeAlias
+from typing import Any, TypeAlias, cast
 
 import pandas as pd
 
@@ -30,16 +30,15 @@ class MatrixODT:
         copy: bool = False,
         mode: str | None = None,
     ) -> None:
-        """Implement `__init__`.
-        
+        """Create a time-indexed collection of origin-destination matrices.
+
         Args:
-            rows: TODO describe rows.
-            cols: TODO describe cols.
-            timestamps: TODO describe timestamps.
-            init: TODO describe init.
-            copy: TODO describe copy.
-            mode: TODO describe mode.
-        
+            rows: Row labels or a label-to-position mapping.
+            cols: Column labels or a label-to-position mapping.
+            timestamps: Timestamp labels represented by the collection.
+            init: Initial scalar, matrix mapping, ``MatrixOD``, or ``MatrixODT``.
+            copy: Whether to copy matrix data from the initializer.
+            mode: Optional metadata associated with the matrices.
         """
         self.rows: LabelMap
         self.cols: LabelMap
@@ -85,8 +84,9 @@ class MatrixODT:
                     "mapping timestamps to values."
                 )
             for timestamp, value in init.items():
+                timestamp = cast(Timestamp, timestamp)
                 self.timestamps.add(timestamp)
-                self.ods[timestamp] = self._coerce_matrix(value, copy=copy)
+                self.ods[timestamp] = self._coerce_matrix(cast(MatrixInit, value), copy=copy)
 
     def _coerce_matrix(
         self,
@@ -94,7 +94,6 @@ class MatrixODT:
         *,
         copy: bool,
     ) -> MatrixOD:
-        # Internal helper: coerce matrix.
         """Internal helper: coerce matrix."""
         if isinstance(value, MatrixOD):
             if value.rows != self.rows or value.cols != self.cols:
@@ -103,23 +102,27 @@ class MatrixODT:
         return MatrixOD(self.rows, self.cols, init=value, copy=copy, mode=self.mode)
 
     def _zero_matrix(self) -> MatrixOD:
-        # Internal helper: zero matrix.
         """Internal helper: zero matrix."""
         return MatrixOD(self.rows, self.cols, mode=self.mode)
 
     def _matrix_or_zero(self, timestamp: Timestamp) -> MatrixOD:
-        # Internal helper: matrix or zero.
         """Internal helper: matrix or zero."""
         return self.ods.get(timestamp, self._zero_matrix())
 
     def _ensure_same_axes(self, other: MatrixODT) -> None:
-        # Internal helper: ensure same axes.
         """Internal helper: ensure same axes."""
         if self.rows != other.rows or self.cols != other.cols:
             raise ValueError("Matrices must have the same row and column labels.")
 
     def copy(self, copy_data: bool = True) -> MatrixODT:
-        """Return a copy of this time-indexed matrix."""
+        """Return a copy of this time-indexed matrix.
+
+        Args:
+            copy_data: Whether to copy the underlying matrices or share them.
+
+        Returns:
+            A time-indexed matrix with the same labels, values, and metadata.
+        """
         return MatrixODT(
             self.rows,
             self.cols,
@@ -133,14 +136,13 @@ class MatrixODT:
         self,
         pos: Timestamp | tuple[Hashable, Hashable, Timestamp],
     ) -> MatrixOD | float:
-        """Implement `__getitem__`.
-        
+        """Return a timestamp matrix or one origin-destination value.
+
         Args:
-            pos: TODO describe pos.
-        
+            pos: Timestamp or origin, destination, and timestamp tuple.
+
         Returns:
-            TODO describe return value.
-        
+            The selected matrix or scalar value.
         """
         if not isinstance(pos, tuple):
             return self._matrix_or_zero(pos)
@@ -156,15 +158,11 @@ class MatrixODT:
         pos: Timestamp | tuple[Hashable, Hashable, Timestamp],
         value: MatrixOD | MatrixInit | int | float,
     ) -> None:
-        """Implement `__setitem__`.
-        
+        """Assign a timestamp matrix or one origin-destination value.
+
         Args:
-            pos: TODO describe pos.
-            value: TODO describe value.
-        
-        Returns:
-            TODO describe return value.
-        
+            pos: Timestamp or origin, destination, and timestamp tuple.
+            value: Matrix, scalar, or matrix initializer to assign.
         """
         if not isinstance(pos, tuple):
             self.timestamps.add(pos)
@@ -185,6 +183,12 @@ class MatrixODT:
 
         ``axis=None`` returns a scalar. ``axis=0`` and ``axis=1`` preserve the
         timestamp dimension. ``axis=2`` sums all timestamps into one ``MatrixOD``.
+
+        Args:
+            axis: Axis to collapse, or ``None`` to sum all values.
+
+        Returns:
+            A scalar or matrix with the requested aggregation.
         """
         if axis is None:
             return sum(matrix.sum() for matrix in self.ods.values())
@@ -206,28 +210,26 @@ class MatrixODT:
         raise ValueError("Axis must be 0, 1, 2, or None.")
 
     def __add__(self, other: int | float | MatrixODT) -> MatrixODT:
-        """Implement `__add__`.
-        
+        """Add a scalar or an axis-compatible time-indexed matrix.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or time-indexed matrix to add.
+
         Returns:
-            TODO describe return value.
-        
+            A new time-indexed matrix containing the sum.
         """
         result = self.copy()
         result += other
         return result
 
     def __iadd__(self, other: int | float | MatrixODT) -> MatrixODT:
-        """Implement `__iadd__`.
-        
+        """Add a scalar or axis-compatible matrix in place.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or time-indexed matrix to add.
+
         Returns:
-            TODO describe return value.
-        
+            This matrix after the update.
         """
         if isinstance(other, MatrixODT):
             self._ensure_same_axes(other)
@@ -237,7 +239,7 @@ class MatrixODT:
                 for timestamp in timestamps
             }
             self.timestamps = timestamps
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             for matrix in self.ods.values():
                 matrix += other
         else:
@@ -245,28 +247,26 @@ class MatrixODT:
         return self
 
     def __sub__(self, other: int | float | MatrixODT) -> MatrixODT:
-        """Implement `__sub__`.
-        
+        """Subtract a scalar or an axis-compatible time-indexed matrix.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or time-indexed matrix to subtract.
+
         Returns:
-            TODO describe return value.
-        
+            A new time-indexed matrix containing the difference.
         """
         result = self.copy()
         result -= other
         return result
 
     def __isub__(self, other: int | float | MatrixODT) -> MatrixODT:
-        """Implement `__isub__`.
-        
+        """Subtract a scalar or axis-compatible matrix in place.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or time-indexed matrix to subtract.
+
         Returns:
-            TODO describe return value.
-        
+            This matrix after the update.
         """
         if isinstance(other, MatrixODT):
             self._ensure_same_axes(other)
@@ -276,7 +276,7 @@ class MatrixODT:
                 for timestamp in timestamps
             }
             self.timestamps = timestamps
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float)): # pyright: ignore[reportUnnecessaryIsInstance]
             for matrix in self.ods.values():
                 matrix -= other
         else:
@@ -284,28 +284,26 @@ class MatrixODT:
         return self
 
     def __mul__(self, other: int | float | MatrixODT) -> MatrixODT:
-        """Implement `__mul__`.
-        
+        """Multiply by a scalar or axis-compatible matrix element-wise.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or time-indexed matrix multiplier.
+
         Returns:
-            TODO describe return value.
-        
+            A new time-indexed matrix containing the product.
         """
         result = self.copy()
         result *= other
         return result
 
     def __imul__(self, other: int | float | MatrixODT) -> MatrixODT:
-        """Implement `__imul__`.
-        
+        """Multiply by a scalar or axis-compatible matrix in place.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or time-indexed matrix multiplier.
+
         Returns:
-            TODO describe return value.
-        
+            This matrix after the update.
         """
         if isinstance(other, MatrixODT):
             self._ensure_same_axes(other)
@@ -315,7 +313,7 @@ class MatrixODT:
                 for timestamp in timestamps
             }
             self.timestamps = timestamps
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float)): # pyright: ignore[reportUnnecessaryIsInstance]
             for matrix in self.ods.values():
                 matrix *= other
         else:
@@ -323,28 +321,26 @@ class MatrixODT:
         return self
 
     def __truediv__(self, other: int | float | MatrixODT) -> MatrixODT:
-        """Implement `__truediv__`.
-        
+        """Divide by a scalar or axis-compatible matrix element-wise.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or time-indexed matrix divisor.
+
         Returns:
-            TODO describe return value.
-        
+            A new time-indexed matrix containing the quotient.
         """
         result = self.copy()
         result /= other
         return result
 
     def __itruediv__(self, other: int | float | MatrixODT) -> MatrixODT:
-        """Implement `__itruediv__`.
-        
+        """Divide by a scalar or axis-compatible matrix in place.
+
         Args:
-            other: TODO describe other.
-        
+            other: Scalar or time-indexed matrix divisor.
+
         Returns:
-            TODO describe return value.
-        
+            This matrix after the update.
         """
         if isinstance(other, MatrixODT):
             self._ensure_same_axes(other)
@@ -354,7 +350,7 @@ class MatrixODT:
                 for timestamp in timestamps
             }
             self.timestamps = timestamps
-        elif isinstance(other, (int, float)):
+        elif isinstance(other, (int, float)): # pyright: ignore[reportUnnecessaryIsInstance]
             for matrix in self.ods.values():
                 matrix /= other
         else:
@@ -368,7 +364,14 @@ class MatrixODT:
         posinf: float | None = None,
         neginf: float | None = None,
     ) -> None:
-        """Replace NaN and infinite values in every timestamp matrix."""
+        """Replace NaN and infinite values in every timestamp matrix.
+
+        Args:
+            copy: Whether to return new arrays instead of updating in place.
+            nan: Replacement value for NaN entries.
+            posinf: Replacement value for positive infinity entries.
+            neginf: Replacement value for negative infinity entries.
+        """
         for matrix in self.ods.values():
             matrix.nan_to_num(copy=copy, nan=nan, posinf=posinf, neginf=neginf)
 
@@ -377,7 +380,7 @@ class MatrixODT:
         rows: LabelsInput,
         cols: LabelsInput,
         timestamps: (
-            list[Timestamp] | set[Timestamp] | tuple[Timestamp, ...] | pd.DataFrame | None
+            list[Timestamp] | set[Timestamp] | tuple[Timestamp, ...] | None
         ) = None,
         df: pd.DataFrame | None = None,
         o_field: str = "o",
@@ -390,10 +393,20 @@ class MatrixODT:
         For backwards compatibility, the third positional argument may be the
         DataFrame itself. When ``timestamps`` is omitted, it is inferred from the
         DataFrame in first-seen order.
+
+        Args:
+            rows: Row labels or a label-to-position mapping.
+            cols: Column labels or a label-to-position mapping.
+            timestamps: Optional timestamp labels.
+            df: DataFrame containing origin, destination, timestamp, and value columns.
+            o_field: Name of the origin column.
+            d_field: Name of the destination column.
+            timestamp_field: Name of the timestamp column.
+            value_field: Name of the value column.
+
+        Returns:
+            A time-indexed matrix populated from ``df``.
         """
-        if isinstance(timestamps, pd.DataFrame) and df is None:
-            df = timestamps
-            timestamps = None
         if df is None:
             raise TypeError("df is required.")
 
@@ -410,7 +423,7 @@ class MatrixODT:
 
         ods: dict[Timestamp, MatrixOD] = {}
         for timestamp, group in frame.groupby("timestamp", sort=False):
-            ods[timestamp] = MatrixOD.read_df(
+            ods[cast(Timestamp, timestamp)] = MatrixOD.read_df(
                 rows=rows,
                 cols=cols,
                 df=group,
@@ -431,7 +444,21 @@ class MatrixODT:
         timestamp_field: str = "timestamp",
         value_field: str = "value",
     ) -> MatrixODT:
-        """Create a time-indexed matrix from a long-form CSV file."""
+        """Create a time-indexed matrix from a long-form CSV file.
+
+        Args:
+            rows: Row labels or a label-to-position mapping.
+            cols: Column labels or a label-to-position mapping.
+            file: CSV path or path-like object.
+            timestamps: Optional timestamp labels.
+            o_field: Name of the origin column.
+            d_field: Name of the destination column.
+            timestamp_field: Name of the timestamp column.
+            value_field: Name of the value column.
+
+        Returns:
+            A time-indexed matrix populated from the CSV file.
+        """
         df = pd.read_csv(file, usecols=[o_field, d_field, value_field, timestamp_field])
         return MatrixODT.read_df(
             rows=rows,
@@ -451,7 +478,17 @@ class MatrixODT:
         timestamp_field: str = "timestamp",
         value_field: str = "value",
     ) -> pd.DataFrame:
-        """Return the data as a sorted long-form DataFrame."""
+        """Return the data as a sorted long-form DataFrame.
+
+        Args:
+            o_field: Name of the origin column in the result.
+            d_field: Name of the destination column in the result.
+            timestamp_field: Name of the timestamp column in the result.
+            value_field: Name of the value column in the result.
+
+        Returns:
+            A sorted DataFrame with one row per matrix cell and timestamp.
+        """
         data: list[dict[str, Any]] = []
         for timestamp, od_matrix in self.ods.items():
             for origin, origin_index in od_matrix.rows.items():
@@ -474,7 +511,15 @@ class MatrixODT:
         timestamp_field: str = "timestamp",
         value_field: str = "value",
     ) -> None:
-        """Write the data as a sorted long-form CSV file."""
+        """Write the data as a sorted long-form CSV file.
+
+        Args:
+            file: CSV path or path-like object.
+            o_field: Name of the origin column.
+            d_field: Name of the destination column.
+            timestamp_field: Name of the timestamp column.
+            value_field: Name of the value column.
+        """
         df = self.write_df(
             o_field=o_field,
             d_field=d_field,

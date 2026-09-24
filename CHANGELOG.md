@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+- Removed the `LabeledMatrix` class and its public API.
+
 ## 0.1.1 - 2026-09-08
 
 - Aligned GitHub Actions workflows with the configreader flow and analogous file names:
