@@ -411,7 +411,7 @@ class MatrixODT:
         if df is None:
             raise TypeError("df is required.")
 
-        frame = df[[o_field, d_field, timestamp_field, value_field]].rename(
+        frame = df[[o_field, d_field, timestamp_field, value_field]].rename(  # pyright: ignore
             columns={
                 o_field: "o",
                 d_field: "d",
@@ -420,14 +420,14 @@ class MatrixODT:
             }
         )
         if timestamps is None:
-            timestamps = list(pd.unique(frame["timestamp"]))
+            timestamps = list(pd.unique(frame["timestamp"]))  # pyright: ignore
 
         ods: dict[Timestamp, MatrixOD] = {}
-        for timestamp, group in frame.groupby("timestamp", sort=False):
+        for timestamp, group in frame.groupby("timestamp", sort=False):  # pyright: ignore
             ods[cast(Timestamp, timestamp)] = MatrixOD.read_df(
                 rows=rows,
                 cols=cols,
-                df=group,
+                df=group,  # pyright: ignore
                 o_field="o",
                 d_field="d",
                 value_field="value",
