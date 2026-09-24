@@ -19,9 +19,8 @@ MatrixInit: TypeAlias = (
     | int
     | float
     | np.ndarray
-    | "MatrixOD"
     | None
-)  # noqa: E501
+)
 
 
 def convert_to_dict(labels: LabelsInput) -> LabelMap:
