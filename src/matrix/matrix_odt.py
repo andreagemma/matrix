@@ -276,7 +276,7 @@ class MatrixODT:
                 for timestamp in timestamps
             }
             self.timestamps = timestamps
-        elif isinstance(other, (int, float)): # pyright: ignore[reportUnnecessaryIsInstance]
+        elif isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             for matrix in self.ods.values():
                 matrix -= other
         else:
@@ -313,7 +313,7 @@ class MatrixODT:
                 for timestamp in timestamps
             }
             self.timestamps = timestamps
-        elif isinstance(other, (int, float)): # pyright: ignore[reportUnnecessaryIsInstance]
+        elif isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             for matrix in self.ods.values():
                 matrix *= other
         else:
@@ -350,7 +350,7 @@ class MatrixODT:
                 for timestamp in timestamps
             }
             self.timestamps = timestamps
-        elif isinstance(other, (int, float)): # pyright: ignore[reportUnnecessaryIsInstance]
+        elif isinstance(other, (int, float)):  # pyright: ignore[reportUnnecessaryIsInstance]
             for matrix in self.ods.values():
                 matrix /= other
         else:
@@ -379,9 +379,7 @@ class MatrixODT:
     def read_df(
         rows: LabelsInput,
         cols: LabelsInput,
-        timestamps: (
-            list[Timestamp] | set[Timestamp] | tuple[Timestamp, ...] | None
-        ) = None,
+        timestamps: (list[Timestamp] | set[Timestamp] | tuple[Timestamp, ...] | None) = None,
         df: pd.DataFrame | None = None,
         o_field: str = "o",
         d_field: str = "d",
