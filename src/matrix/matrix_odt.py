@@ -407,6 +407,9 @@ class MatrixODT:
         Returns:
             A time-indexed matrix populated from ``df``.
         """
+        if df is None and isinstance(timestamps, pd.DataFrame):
+            df = timestamps
+            timestamps = None
         if df is None:
             raise TypeError("df is required.")
 
