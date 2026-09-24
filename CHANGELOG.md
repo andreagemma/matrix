@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 
 - Removed the `LabeledMatrix` class and its public API.
+- Bumped package/build version from `0.1.1` to `0.1.2`.
 
 ## 0.1.1 - 2026-09-08
 
