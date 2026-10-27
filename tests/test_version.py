@@ -12,4 +12,4 @@ def test_public_version_uses_code_source() -> None:
 
 
 def test_public_exports() -> None:
-    assert {"MatrixOD", "MatrixODT", "__version__"} <= set(matrix.__all__)
+    assert {"MatrixOD", "MatrixODT", "MatrixODTSparse", "__version__"} <= set(matrix.__all__)

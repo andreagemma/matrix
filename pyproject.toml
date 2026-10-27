@@ -9,7 +9,12 @@ description = "Label-aware origin-destination matrix utilities built on NumPy an
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
-license-files = ["LICENSE"]
+license-files = [
+  "LICENSE",
+  "THIRD_PARTY_NOTICES.md",
+  "licenses/third_party/summary.tsv",
+  "licenses/third_party/packages/*/*"
+]
 authors = [
   { name = "Andrea Gemma" }
 ]

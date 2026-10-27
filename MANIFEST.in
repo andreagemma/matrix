@@ -1,2 +1,5 @@
 include CHANGELOG.md
+include THIRD_PARTY_NOTICES.md
 recursive-include docs *.md
+include licenses/third_party/summary.tsv
+recursive-include licenses/third_party/packages *

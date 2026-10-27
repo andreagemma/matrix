@@ -43,6 +43,13 @@ def test_validates_labels_and_shape() -> None:
         MatrixOD(["A", "B"], ["X", "Y"], init=[[1, 2, 3]])
 
 
+def test_mapping_labels_are_immutable() -> None:
+    matrix = MatrixOD({"A": 0}, {"X": 0})
+
+    with pytest.raises(TypeError):
+        matrix.rows["B"] = 1  # type: ignore[index]
+
+
 def test_copy_can_be_deep_or_shared() -> None:
     matrix = make_matrix()
     deep_copy = matrix.copy(copy_data=True)

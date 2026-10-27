@@ -103,6 +103,32 @@ assert odt.sum(axis=2)["A", "X"] == 10
 timestamp, and value columns. If `timestamps` is omitted, timestamp labels are
 inferred from the DataFrame in first-seen order.
 
+## MatrixODTSparse
+
+`MatrixODTSparse` provides the same label- and timestamp-based access using a
+sparse mapping of nonzero origin-destination values. Unstored coordinates read
+as zero, and assigning zero removes a coordinate from storage.
+
+```python
+from matrix import MatrixODTSparse
+
+sparse = MatrixODTSparse(
+    rows=["A", "B"],
+    cols=["X", "Y"],
+    timestamps=[0, 1],
+    init={("A", "X", 0): 10, ("B", "Y", 1): 5},
+)
+
+assert sparse["A", "X", 0] == 10
+assert sparse["A", "Y", 0] == 0
+assert sparse.shape == (2, 2, 2)
+```
+
+Nonzero scalar initialization fills all coordinates; use a coordinate mapping
+to retain sparse storage. Element-wise arithmetic uses implicit zeros, and
+division by zero follows NumPy's NaN/infinity behavior. `read_df()`, `read_csv()`,
+`write_df()`, and `write_csv()` provide long-form data interchange.
+
 ## API Summary
 
 - `MatrixOD(rows, cols, init=None, copy=False, mode=None)`
@@ -115,6 +141,11 @@ inferred from the DataFrame in first-seen order.
 - `MatrixODT.read_csv(rows, cols, file, timestamps=None, ...)`
 - `MatrixODT.write_df(...)`
 - `MatrixODT.write_csv(file, ...)`
+- `MatrixODTSparse(rows, cols, timestamps, init=None, copy=False, mode=None)`
+- `MatrixODTSparse.read_df(rows, cols, timestamps=None, df=None, ...)`
+- `MatrixODTSparse.read_csv(rows, cols, file, timestamps=None, ...)`
+- `MatrixODTSparse.write_df(...)`
+- `MatrixODTSparse.write_csv(file, ...)`
 ## Development
 
 GA Matrix supports Python 3.10 and newer.
@@ -148,4 +179,5 @@ content.
 
 ## License
 
-GA Matrix is distributed under the MIT License. See [LICENSE](LICENSE).
+GA Matrix is distributed under the MIT License. See [LICENSE](LICENSE) and
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for third-party license notices.

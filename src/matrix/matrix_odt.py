@@ -107,7 +107,8 @@ class MatrixODT:
 
     def _matrix_or_zero(self, timestamp: Timestamp) -> MatrixOD:
         """Internal helper: matrix or zero."""
-        return self.ods.get(timestamp, self._zero_matrix())
+        matrix = self.ods.get(timestamp)
+        return matrix if matrix is not None else self._zero_matrix()
 
     def _ensure_same_axes(self, other: MatrixODT) -> None:
         """Internal helper: ensure same axes."""
@@ -131,6 +132,16 @@ class MatrixODT:
             copy=copy_data,
             mode=self.mode,
         )
+
+    def get_matrix_at_t(self, timestamp: Timestamp) -> MatrixOD:
+        """Return the matrix at ``timestamp``, or a zero matrix if it is missing."""
+        return self._matrix_or_zero(timestamp)
+
+    def get_od(self, timestamp: Timestamp, origin: Hashable, destination: Hashable) -> float:
+        """Return one origin-destination value, using zero for a missing timestamp."""
+        if timestamp not in self.ods:
+            return 0.0
+        return float(self.ods[timestamp][origin, destination])
 
     def __getitem__(
         self,
@@ -528,3 +539,14 @@ class MatrixODT:
             value_field=value_field,
         )
         df.to_csv(file, index=False)
+
+    @property
+    def shape(self) -> tuple[int, int, int] | None:
+        """Return the shape of the matrix as (n_timestamps, n_origins, n_destinations)."""
+        if not self.ods:
+            return None
+        n_timestamps = len(self.ods)
+        first_od_matrix = next(iter(self.ods.values()))
+        n_origins = len(first_od_matrix.rows)
+        n_destinations = len(first_od_matrix.cols)
+        return (n_timestamps, n_origins, n_destinations)

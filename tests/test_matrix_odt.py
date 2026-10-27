@@ -65,6 +65,16 @@ def test_setitem_replaces_timestamp_matrix() -> None:
     assert matrix[3] is replacement
 
 
+def test_explicit_timestamp_accessors_and_shape() -> None:
+    matrix = make_matrix_odt()
+
+    assert matrix.get_od(0, "A", "X") == 5
+    assert matrix.get_od(99, "A", "X") == 0
+    assert matrix.get_matrix_at_t(1)["C", "Z"] == 90
+    assert matrix.get_matrix_at_t(99).sum() == 0
+    assert matrix.shape == (2, 3, 3)
+
+
 def test_getitem_key_error_for_missing_origin_or_destination() -> None:
     matrix = make_matrix_odt()
 

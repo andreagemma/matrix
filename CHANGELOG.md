@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## 0.1.3 - Unreleased
+
+- Added the public `MatrixODTSparse` time-indexed sparse matrix API and its
+  DataFrame/CSV import and export support.
+- Added timestamp accessors and shape metadata to `MatrixODT`.
+- Preserved immutable label mappings and aligned sparse arithmetic, zero
+  handling, shape reporting, and numerical cleanup with the dense API.
+- Added third-party license inventory and packaged license texts.
+- Bumped package/build version from `0.1.2` to `0.1.3`.
+
+## 0.1.2
 
 - Removed the `LabeledMatrix` class and its public API.
 - Bumped package/build version from `0.1.1` to `0.1.2`.
